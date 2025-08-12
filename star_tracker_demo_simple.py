@@ -33,7 +33,8 @@ def generate_star_field(width=640, height=480, n_stars=40, sigma_px=1.2, amp_ran
 
     yy, xx = np.mgrid[0:height, 0:width]
     for x0, y0, a in zip(xs, ys, amps):
-        img += a * np.exp(-(((xx - x0) ** 2) + ((yy - y0) ** 2)) / (2 * sigma_px ** 2))
+        # Apply 2D Gaussian PSF to "blur" brightness data across pixels
+        img += a * np.exp(-(((xx - x0) ** 2) + ((yy - y0) ** 2)) / (2 * sigma_px ** 2)) 
 
     truth = pd.DataFrame({"x_true": xs, "y_true": ys, "amplitude": amps})
     return img, truth, bg_level
@@ -42,18 +43,21 @@ def generate_star_field(width=640, height=480, n_stars=40, sigma_px=1.2, amp_ran
 # Detection 
 
 def threshold_image_absolute(img, thr):
-    """Binary mask: True where img > thr."""
+    """Binary mask: True where img > thr. This flags bright pixels. """
     return img > thr
 
 
 def connected_components_label(binary):
-    """8-connected components via BFS. Returns label image (0 = background)."""
+    """8-connected components via BFS. Returns label image."""
     h, w = binary.shape
     labels = np.zeros((h, w), dtype=np.int32)
     visited = np.zeros_like(binary, dtype=bool)
-    nbrs = [(-1,-1),(-1,0),(-1,1),(0,-1),(0,1),(1,-1),(1,0),(1,1)]
+    # These are the 8 components the Alg. will look at and determine if they form a blob
+    nbrs = [(-1,-1),(-1,0),(-1,1),(0,-1),(0,1),(1,-1),(1,0),(1,1)] 
     lbl = 0
 
+    # Perform BFS. Check for connectivity for all 8 neighbouring points. 
+    # Output: Labels now contains IDs 1..lbl for each connected blob (0 = background).
     for y in range(h):
         for x in range(w):
             if not binary[y, x] or visited[y, x]:
@@ -72,28 +76,29 @@ def connected_components_label(binary):
                         q.append((ny, nx))
     return labels
 
-
+# This function computes a sub-pixel centroid (center of mass) for each connected blob in a labeled image
 def compute_centroids(img, labels, min_pixels=5):
     """Intensity-weighted centroid per blob. Returns DataFrame."""
     out = []
-    for label in range(1, labels.max() + 1):
-        mask = labels == label
+    for label in range(1, labels.max() + 1): # Loop over blobs
+        mask = labels == label # Pick pixels belonging to this blob
         area = int(mask.sum())
         if area < min_pixels:
             continue
-        ys, xs = np.nonzero(mask)
+        ys, xs = np.nonzero(mask) # Get pixel coordinates and their intensities
         I = img[mask]
         flux = float(I.sum())
-        x_c = float((xs * I).sum() / flux)
+        x_c = float((xs * I).sum() / flux) # Compute intensity-weighted centroid 
         y_c = float((ys * I).sum() / flux)
         out.append({"label": label, "x_det": x_c, "y_det": y_c, "flux": flux, "area": area})
-    return pd.DataFrame(out)
+    return pd.DataFrame(out) # Return as a table
 
 
 # Evaluation
 
 def match_detections_to_truth(detections, truth, max_dist_px=3.0):
     """Greedy nearest-neighbor truth→detection matching within max_dist_px."""
+    # Pair each ground-truth star with its nearest detected centroid
     if detections.empty:
         return pd.DataFrame()
     used = np.zeros(len(detections), dtype=bool)
