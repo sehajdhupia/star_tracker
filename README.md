@@ -1,6 +1,6 @@
 # star_tracker
 
-A tiny, self-contained **star detection and centroiding** demo. It synthesizes a star field, detects the “stars” as blobs, estimates their centers with **sub-pixel** precision, and (optionally) compares detections to ground truth.
+A tiny, self-contained **star detection and centroiding** demo. It synthesizes a star field, detects the “stars” as blobs, estimates their centers with **sub-pixel** precision, and compares detections to ground truth.
 
 This is a minimal slice of what ground test software for a **star tracker** does: ingest images → detect stars → measure positions → report accuracy.
 
@@ -43,4 +43,17 @@ A **star tracker** is a camera + software that images the night sky, identifies 
 
 ---
 
+## Quick start
 
+### Run the simple demo
+
+```bash
+# optional: create a virtual env
+python3 -m venv .venv && source .venv/bin/activate
+
+# install deps
+pip install numpy pandas matplotlib
+
+# run with defaults; outputs go to ./out_simple
+python3 star_tracker_demo_simple.py
+```
