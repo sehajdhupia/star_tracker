@@ -96,3 +96,68 @@ How to read the outputs
 -   **Precision** = matched / detections
 -   **Recall** = matched / truth
 -   **Mean pixel error** = average of `err_px` across matches
+
+
+---
+
+## Modes: Simple vs. Full (Noisy) Demo
+
+This repo includes two variants:
+
+- **`star_tracker_demo_simple.py` (recommended to start)**  
+  *Noiseless.* Generates a clean star field and runs detection/centroiding with a fixed absolute threshold. Easiest to explain and debug.
+
+- **`star_tracker_demo.py` (full demo)**  
+  *With noise.* Adds **Gaussian read noise** and rare **hot pixels** to mimic real sensors. Uses an auto threshold `T = μ + k·σ` by default (tunable), plus the same detection and centroiding pipeline.
+
+### Run the full (noisy) demo
+
+```bash
+pip install numpy pandas matplotlib
+python3 star_tracker_demo.py --outdir ./out
+
+# Tweak realism:
+# - Lower or raise read noise
+# - Change hot-pixel probability
+# - Adjust k (threshold factor)
+python3 star_tracker_demo.py \
+  --read_noise_std 8.0 \
+  --hot_pixel_prob 1e-4 \
+  --k 3.0 \
+  --outdir ./out
+
+# If you want the full script but *without* noise:
+python3 star_tracker_demo.py --read_noise_std 0 --hot_pixel_prob 0 --k 3.5 --outdir ./out_noiseless
+```
+
+Key Parameters (both demos)
+---------------------------
+
+-   `--width`, `--height` --- image size (pixels)
+
+-   `--n_stars` --- number of synthetic stars
+
+-   `--sigma_px` --- PSF width (Gaussian σ in pixels)
+
+-   **Simple demo only:** `--thr` --- absolute detection threshold (e.g., `70` if background `= 20`)
+
+-   **Full demo only:**
+
+    -   `--read_noise_std` --- Gaussian read noise σ (e.g., `8.0`)
+
+    -   `--hot_pixel_prob` --- probability of hot pixels per pixel (e.g., `1e-4`)
+
+    -   `--k` --- auto-threshold factor in `T = μ + k-σ` (e.g., `3.0--3.5`)
+
+-   `--min_pixels` --- minimum blob area (pixels) to count as a star
+
+-   `--outdir` --- output folder for images/CSVs
+
+* * * * *
+
+Notes on Thresholding
+---------------------
+
+-   **Simple (noiseless):** fixed **absolute** threshold (predictable; easy to reason about).
+
+-   **Full (noisy):** **auto** threshold `T = μ + k-σ` to adapt to noise and brightness. In production, you might use an adaptive/local background estimator or robust stats.
