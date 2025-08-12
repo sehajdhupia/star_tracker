@@ -57,3 +57,45 @@ pip install numpy pandas matplotlib
 # run with defaults; outputs go to ./out_simple
 python3 star_tracker_demo_simple.py
 ```
+
+You'll get:
+
+-   `out_simple/starfield_noiseless.png` --- synthetic star field (no noise)
+-   `out_simple/detections_overlay_noiseless.png` --- stars with centroid markers
+-   `out_simple/truth_positions_noiseless.csv` --- ground-truth positions
+-   `out_simple/detections_noiseless.csv` --- detected centroids + flux/area
+-   `out_simple/matches_noiseless.csv` --- truth↔detection pairs + pixel error
+
+How to read the outputs
+-----------------------
+
+### Images
+
+-   `starfield_noiseless.png`: "truth" image (sum of Gaussian PSFs + background).
+-   `detections_overlay_noiseless.png`: same image with detected centroids overlaid.
+
+### CSVs
+
+**`truth_positions_noiseless.csv`** (generated truth)
+
+-   `x_true`, `y_true` --- sub-pixel true positions
+-   `amplitude` --- PSF brightness
+
+**`detections_noiseless.csv`** (what the detector found)
+
+-   `label` --- blob id (from connected components)
+-   `x_det`, `y_det` --- sub-pixel centroid
+-   `flux` --- sum of pixel intensities in the blob
+-   `area` --- number of pixels in the blob (helps filter hot pixels in noisy mode)
+
+**`matches_noiseless.csv`** (scoring)
+
+-   `truth_idx`, `det_idx` --- row indices into the above tables
+-   `x_true`, `y_true`, `x_det`, `y_det`
+-   `err_px` --- Euclidean pixel error for that star
+
+### Metrics you can quote
+
+-   **Precision** = matched / detections
+-   **Recall** = matched / truth
+-   **Mean pixel error** = average of `err_px` across matches
